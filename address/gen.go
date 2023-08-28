@@ -39,15 +39,30 @@ func main() {
 		return
 	}
 
-	chainPath := []uint32{1, 2, 3, 4}
+	chainPath := []uint32{0, 0}
+	srcAddress, err := genAddress(chainPath, keyID, &ecdsaClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Source address: ", srcAddress)
+
+	chainPath = []uint32{0, 1}
+	destAddress, err := genAddress(chainPath, keyID, &ecdsaClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Dest address: ", destAddress)
+}
+
+func genAddress(chainPath []uint32, keyID string, ecdsaClient *tsm.ECDSAClient) (string, error) {
 	derPublicKey, err := ecdsaClient.PublicKey(keyID, chainPath)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	publicKey, err := ecdsaClient.ParsePublicKey(derPublicKey)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	compressedPublicKey := make([]byte, 1+32)
@@ -57,11 +72,12 @@ func main() {
 
 	address, err := btcutil.NewAddressPubKey(compressedPublicKey, &chaincfg.TestNet3Params)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	// Note: Encoding a *AddressPubKey (pay-to-pubkey) results in a P2PKH address
 	//
 	//	(pay-to-pubkey-hash). Convert address to a *AddressPubKeyHash before using it.
 	btcAddress := address.EncodeAddress()
-	fmt.Println("Bitcoin address: ", btcAddress)
+
+	return btcAddress, nil
 }
